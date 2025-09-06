@@ -1,0 +1,3 @@
+:root { --maxw: 1200px; }
+.container-max { max-width: var(--maxw); margin: 0 auto; }
+.card-img-top { object-fit: cover; height: 200px; }
