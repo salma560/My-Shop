@@ -25,7 +25,12 @@ export default function Home({ showOnlyProducts = false }: Props) {
     <Container className="py-4">
       {!showOnlyProducts && (
         <>
-          <h3 className="mb-3">Shop by Category</h3>
+    <div className="title-leftbar">
+  <div className="bar" />
+  <h2> Shop By Category</h2>
+</div>
+
+
           {cLoading ? <p>Loading…</p> : (
             <Row className="g-3 mb-4">
               {categories.map(c => (
@@ -43,7 +48,12 @@ export default function Home({ showOnlyProducts = false }: Props) {
         </>
       )}
 
-      <h4 className="mb-3">Products</h4>
+     <div className="title-leftbar">
+  <div className="bar" />
+  <h2>Products</h2>
+</div>
+
+
       {pLoading ? <p>Loading…</p> : (
         <Row className="g-3">
           {products.map(p => (
