@@ -1,40 +1,68 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import http from '@/api/http'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import http from '@/api/http';
 
-export type User = { id: string | number; name: string; email: string }
-type Credentials = { email: string; password: string }
+export type User = { id: number | string; name: string; email: string; password?: string };
 
-type AuthState = {
-  user: User | null
-  loading: boolean
-  error: string | null
-}
+type AuthState = { user: User | null; loading: boolean; error: string | null };
 
 const loadUser = (): User | null => {
-  try { const r = localStorage.getItem('auth_user'); return r ? JSON.parse(r) : null } catch { return null }
-}
-const saveUser = (u: User | null) => { u ? localStorage.setItem('auth_user', JSON.stringify(u)) : localStorage.removeItem('auth_user') }
+  try { const u = localStorage.getItem('auth_user'); return u ? JSON.parse(u) : null; } catch { return null; }
+};
+const saveUser = (u: User | null) => {
+  u ? localStorage.setItem('auth_user', JSON.stringify(u)) : localStorage.removeItem('auth_user');
+};
 
-const initialState: AuthState = { user: loadUser(), loading: false, error: null }
+const initialState: AuthState = { user: loadUser(), loading: false, error: null };
 
-export const login = createAsyncThunk<User, Credentials>(
-  'auth/login',
-  async (creds, { rejectWithValue }) => {
-    const { data } = await http.get<User[]>('/users', { params: creds })
-    if (!data.length) return rejectWithValue('Invalid email or password') as any
-    return data[0]
+
+export const register = createAsyncThunk<
+  User,
+  { name: string; email: string; password: string },
+  { rejectValue: string }
+>('auth/register', async (payload, { rejectWithValue }) => {
+  try {
+    
+    const { data: exists } = await http.get<User[]>('/users', { params: { email: payload.email } });
+    if (exists.length) return rejectWithValue('Email already exists');
+
+    const { data } = await http.post<User>('/users', payload);
+    return data;
+  } catch (e: any) {
+    return rejectWithValue(e?.message || 'Register failed');
   }
-)
+});
+
+
+export const login = createAsyncThunk<
+  User,
+  { email: string; password: string },
+  { rejectValue: string }
+>('auth/login', async (payload, { rejectWithValue }) => {
+  try {
+    const { data } = await http.get<User[]>('/users', { params: payload });
+    if (!data.length) return rejectWithValue('Invalid email or password');
+    return data[0];
+  } catch (e: any) {
+    return rejectWithValue(e?.message || 'Login failed');
+  }
+});
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
-  reducers: {},
-  extraReducers: b => {
-    b.addCase(login.pending, s => { s.loading = true; s.error = null })
-    b.addCase(login.fulfilled, (s, a) => { s.loading = false; s.user = a.payload; saveUser(a.payload) })
-    b.addCase(login.rejected, (s, a) => { s.loading = false; s.error = (a.payload as string) || a.error.message || 'Login failed' })
-  }
-})
+  reducers: {
+    logout(s) { s.user = null; saveUser(null); },
+  },
+  extraReducers: (b) => {
+    b.addCase(register.pending, (s) => { s.loading = true; s.error = null; });
+    b.addCase(register.fulfilled, (s, a) => { s.loading = false; s.user = a.payload; saveUser(a.payload); });
+    b.addCase(register.rejected, (s, a) => { s.loading = false; s.error = a.payload || 'Register failed'; });
 
-export default authSlice.reducer
+    b.addCase(login.pending, (s) => { s.loading = true; s.error = null; });
+    b.addCase(login.fulfilled, (s, a) => { s.loading = false; s.user = a.payload; saveUser(a.payload); });
+    b.addCase(login.rejected, (s, a) => { s.loading = false; s.error = a.payload || 'Login failed'; });
+  },
+});
+
+export const { logout } = authSlice.actions;
+export default authSlice.reducer;

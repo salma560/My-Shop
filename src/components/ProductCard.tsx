@@ -1,36 +1,50 @@
-// src/components/ProductCard.tsx
-import { Card, Button } from 'react-bootstrap'
-import { LinkContainer } from 'react-router-bootstrap'
-import type { Product } from '@/types'
-import { useAppDispatch } from '@/store/hooks'
-import { addToCart } from '@/features/cart/cartSlice'
-import { toast } from 'react-toastify'
+import { Card, Button } from 'react-bootstrap';
+import { LinkContainer } from 'react-router-bootstrap';
+import { useAppDispatch } from '@/store/hooks';
+import type { Product } from '@/features/products/productsSlice';
+import { addToCart } from '@/features/cart/cartSlice';
 
-export default function ProductCard({ product }: { product: Product }) {
-  const dispatch = useAppDispatch()
-  const handleAdd = () => {
-    dispatch(addToCart(product))
-    toast.success('Added to cart')
-  }
+type Props = { product: Product };
+
+export default function ProductCard({ product }: Props) {
+  const dispatch = useAppDispatch();
+  const handleAdd = () => dispatch(addToCart(product));
+
+  const imgSrc = product.image && product.image.trim().length
+    ? product.image
+    : '/placeholder.png';
 
   return (
-    <Card className="h-100">
-      <Card.Img variant="top" src={product.image} alt={product.title} />
-      <Card.Body className="d-flex flex-column">
-        <Card.Title>{product.title}</Card.Title>
-        <Card.Text className="flex-grow-1">{product.description}</Card.Text>
+    <Card className="h-100 shadow-card card-hover">
+      <div className="ratio-box">
+        <img
+          src={imgSrc}
+          alt={product.title}
+          className="card-img-fit"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.png'; }}
+        />
+      </div>
 
-        <div className="d-flex justify-content-between align-items-center">
+      <Card.Body className="d-flex flex-column">
+        <Card.Title className="fw-semibold mb-2 line-clamp-1">
+          {product.title}
+        </Card.Title>
+        <Card.Text className="text-muted mb-3 line-clamp-2">
+          {product.description}
+        </Card.Text>
+
+        <div className="mt-auto d-flex justify-content-between align-items-center">
           <strong>${product.price}</strong>
           <div className="d-flex gap-2">
-            <Button variant="primary" onClick={handleAdd}>Add</Button>
-
+            <Button variant="primary" className="btn-pill" onClick={handleAdd}>Add</Button>
             <LinkContainer to={`/product/${product.id}`}>
-              <Button variant="outline-secondary">Details</Button>
+              <Button variant="outline-secondary" className="btn-pill">Details</Button>
             </LinkContainer>
           </div>
         </div>
       </Card.Body>
     </Card>
-  )
+  );
 }
